@@ -131,12 +131,11 @@ const router = createRouter({
   history: createWebHashHistory()
 });
 
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to) => {
   if (typeof to.meta.title === 'string')
     document.title = to.meta.title;
    else if (typeof to.name === 'string')
     document.title = to.name;
-  next();
 });
 
 export default router;
