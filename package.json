@@ -5,10 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc -b && vite build",
+    "build": "run-s build-only type-check",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@nuxt/ui": "^4.10.0",
     "@tailwindcss/vite": "^4.3.3",
     "tailwindcss": "^4.3.3",
     "three": "^0.185.1",

@@ -3,7 +3,6 @@ import {onMounted, onUnmounted, ref, type Ref, shallowRef} from 'vue';
 import {BoxGeometry, DirectionalLight, Mesh, MeshStandardMaterial, Scene} from 'three';
 import RendererHelper from '../core/helpers/RendererHelper';
 import PerspectiveCameraHelper from '../core/helpers/PerspectiveCameraHelper';
-import ToggleSwitch from '../components/ToggleSwitch.vue';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
@@ -51,15 +50,15 @@ onUnmounted(() => {
   <div class="h-full relative">
     <div class="h-full" ref="el">
     </div>
-    <div class="rounded-lg p-2 absolute left-2 top-2 bg-gray-100 dark:bg-gray-900">
+    <div class="rounded-lg space-y-2 p-2 absolute left-2 top-2 bg-default">
       <div>
-        <ToggleSwitch label="绕X轴旋转" v-model="rotateX"></ToggleSwitch>
+        <USwitch label="绕X轴旋转" v-model="rotateX"></USwitch>
       </div>
       <div>
-        <ToggleSwitch label="绕Y轴旋转" v-model="rotateY"></ToggleSwitch>
+        <USwitch label="绕Y轴旋转" v-model="rotateY"></USwitch>
       </div>
       <div>
-        <ToggleSwitch label="绕Z轴旋转" v-model="rotateZ"></ToggleSwitch>
+        <USwitch label="绕Z轴旋转" v-model="rotateZ"></USwitch>
       </div>
     </div>
   </div>

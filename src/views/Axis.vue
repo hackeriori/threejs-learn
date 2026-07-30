@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import {onMounted, onUnmounted, ref, type Ref, shallowRef, watch} from 'vue';
 import {BoxGeometry, Mesh, MeshBasicMaterial, Scene} from 'three';
-import RendererHelper from '@/core/helpers/RendererHelper';
-import PerspectiveCameraHelper from '@/core/helpers/PerspectiveCameraHelper';
+import RendererHelper from '../core/helpers/RendererHelper';
+import PerspectiveCameraHelper from '../core/helpers/PerspectiveCameraHelper';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
