@@ -4,6 +4,9 @@ import {BoxGeometry, Mesh, MeshBasicMaterial, Scene} from 'three';
 import RendererHelper from '../core/helpers/RendererHelper';
 import PerspectiveCameraHelper from '../core/helpers/PerspectiveCameraHelper';
 
+const MIN_POS = -10;
+const MAX_POS = 10;
+
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
 let perspectiveCameraHelper: PerspectiveCameraHelper;
@@ -19,7 +22,21 @@ watch([x, y, z], () => {
 
 function moveCube(axis: 'X' | 'Y' | 'Z', number: 1 | -1) {
   // 以物体的当前坐标为原点，相对移动
-  cube['translate' + axis](number);
+  switch (axis) {
+    case 'X':
+      cube.translateX(number);
+      break;
+    case 'Y':
+      cube.translateY(number);
+      break;
+    case 'Z':
+      cube.translateZ(number);
+      break;
+  }
+  // 限制物体坐标在 min/max 范围内
+  cube.position.x = Math.min(MAX_POS, Math.max(MIN_POS, cube.position.x));
+  cube.position.y = Math.min(MAX_POS, Math.max(MIN_POS, cube.position.y));
+  cube.position.z = Math.min(MAX_POS, Math.max(MIN_POS, cube.position.z));
   // 设置后获取物体的绝对坐标，以在界面显示。
   x.value = cube.position.x;
   y.value = cube.position.y;
@@ -54,43 +71,36 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="height100 ls-abs-outer">
-    <div class="height100" ref="el">
+  <div class="h-full relative">
+    <div class="h-full" ref="el">
     </div>
-  </div>
-  <div class="controlBox">
-    <div>
-      X轴
-      <el-input-number :max="10" :min="-10" v-model="x"></el-input-number>
-    </div>
-    <div>
-      Y轴
-      <el-input-number :max="10" :min="-10" v-model="y"></el-input-number>
-    </div>
-    <div>
-      Z轴
-      <el-input-number :max="10" :min="-10" v-model="z"></el-input-number>
-    </div>
-    <div>移动物体</div>
-    <div>
-      <el-button @click="moveCube('X',-1)">左移</el-button>
-      <el-button @click="moveCube('X',1)">右移</el-button>
-    </div>
-    <div>
-      <el-button @click="moveCube('Y',1)">上移</el-button>
-      <el-button @click="moveCube('Y',-1)">下移</el-button>
-    </div>
-    <div>
-      <el-button @click="moveCube('Z',1)">前移</el-button>
-      <el-button @click="moveCube('Z',-1)">后移</el-button>
-    </div>
-    <div>左手手心朝向自己，伸直大拇指，食指，中指朝向自己。此时食指，大拇指，中指分别代表X,Y,Z，且他们都指向这几个轴的正值
+    <div class="rounded-lg w-xs space-y-2 p-2 absolute left-2 top-2 bg-default">
+      <UForm class="space-y-2">
+        <UFormField label="X轴">
+          <UInputNumber :max="MAX_POS" :min="MIN_POS" v-model="x"></UInputNumber>
+        </UFormField>
+        <UFormField label="Y轴">
+          <UInputNumber :max="MAX_POS" :min="MIN_POS" v-model="y"></UInputNumber>
+        </UFormField>
+        <UFormField label="Z轴">
+          <UInputNumber :max="MAX_POS" :min="MIN_POS" v-model="z"></UInputNumber>
+        </UFormField>
+      </UForm>
+      <div>移动物体</div>
+      <div class="space-x-4">
+        <UButton @click="moveCube('X',-1)">左移</UButton>
+        <UButton @click="moveCube('X',1)">右移</UButton>
+      </div>
+      <div class="space-x-4">
+        <UButton @click="moveCube('Y',1)">上移</UButton>
+        <UButton @click="moveCube('Y',-1)">下移</UButton>
+      </div>
+      <div class="space-x-4">
+        <UButton @click="moveCube('Z',1)">前移</UButton>
+        <UButton @click="moveCube('Z',-1)">后移</UButton>
+      </div>
+      <div>左手手心朝向自己，伸直大拇指，食指，中指朝向自己。此时食指，大拇指，中指分别代表X,Y,Z，且他们都指向这几个轴的正值
+      </div>
     </div>
   </div>
 </template>
-
-<style scoped>
-.controlBox {
-  width: 160px
-}
-</style>

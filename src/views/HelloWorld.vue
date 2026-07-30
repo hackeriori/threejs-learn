@@ -50,15 +50,18 @@ onUnmounted(() => {
   <div class="h-full relative">
     <div class="h-full" ref="el">
     </div>
-    <div class="rounded-lg space-y-2 p-2 absolute left-2 top-2 bg-default">
-      <div>
-        <USwitch label="绕X轴旋转" v-model="rotateX"></USwitch>
-      </div>
-      <div>
-        <USwitch label="绕Y轴旋转" v-model="rotateY"></USwitch>
-      </div>
-      <div>
-        <USwitch label="绕Z轴旋转" v-model="rotateZ"></USwitch>
+    <div class="rounded-lg w-xs space-y-2 p-2 absolute left-2 top-2 bg-default">
+      <USwitch label="绕X轴旋转" v-model="rotateX"></USwitch>
+      <USwitch label="绕Y轴旋转" v-model="rotateY"></USwitch>
+      <USwitch label="绕Z轴旋转" v-model="rotateZ"></USwitch>
+      <div class="space-y-2">
+        <div class="text-lg text-highlighted">右手定则 (Right-Hand Rule)</div>
+        <div>右手定则是 Three.js 判断旋转正负方向的唯一标准。当你给 rotation.x、rotation.y 或 rotation.z
+          设置一个正值时，物体会遵循以下逻辑转动：
+        </div>
+        <div>1. 伸出你的右手，握成拳头。</div>
+        <div>2. 大拇指竖起，指向你想要旋转的那个轴的正方向。</div>
+        <div>3. 其余四指弯曲的方向，就是该轴“正向旋转”的方向。</div>
       </div>
     </div>
   </div>
