@@ -18,6 +18,7 @@ let cube: Mesh;
 watch([x, y, z], () => {
   // 设置物体的绝对坐标
   cube.position.set(x.value, y.value, z.value);
+  rendererHelper?.needUpdate();
 });
 
 function moveCube(axis: 'X' | 'Y' | 'Z', number: 1 | -1) {
@@ -46,8 +47,12 @@ function moveCube(axis: 'X' | 'Y' | 'Z', number: 1 | -1) {
 
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
+  const frameRender = () => {
+    rendererHelper.needUpdate();
+  };
   const renderer = rendererHelper.renderer;
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
+  perspectiveCameraHelper.addEventListener('changed', frameRender);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(0, 0, 10);
 
@@ -57,11 +62,7 @@ onMounted(() => {
   cube = new Mesh(geometry, material);
   scene.add(cube);
 
-  function animate() {
-    renderer.render(scene, camera);
-  }
-
-  renderer.setAnimationLoop(animate);
+  rendererHelper.startLoop(scene, camera);
 });
 
 onUnmounted(() => {
