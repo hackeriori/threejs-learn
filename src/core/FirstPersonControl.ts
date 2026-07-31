@@ -1,4 +1,4 @@
-import {Euler, EventDispatcher, MathUtils, type PerspectiveCamera} from 'three';
+import {Euler, EventDispatcher, MathUtils, Vector3, type PerspectiveCamera} from 'three';
 import type {SimpleChangedEvent} from './helpers/types';
 
 interface TEventMap extends SimpleChangedEvent {
@@ -33,6 +33,10 @@ export default class FirstPersonControl extends EventDispatcher<TEventMap> {
   #moveDown = false;
   // 是否已锁定（锁定表示开始了第一人称）
   #isLocked = false;
+  // 复用 Euler 对象以减小 GC 压力
+  readonly #euler = new Euler(0, 0, 0, 'YXZ');
+  // 复用 Vector3 对象用于合成归一化移动向量
+  readonly #moveVector = new Vector3();
   // 键盘事件代理
   readonly #keyboardEventProxy: (ev: KeyboardEvent) => void;
   // 鼠标移动事件代理
@@ -83,6 +87,7 @@ export default class FirstPersonControl extends EventDispatcher<TEventMap> {
    * 销毁对象，移除事件
    */
   dispose() {
+    if (this.#isLocked) this.unlock();
     // 移除键盘事件
     this.#canvasElement.removeEventListener('keydown', this.#keyboardEventProxy);
     this.#canvasElement.removeEventListener('keyup', this.#keyboardEventProxy);
@@ -111,37 +116,33 @@ export default class FirstPersonControl extends EventDispatcher<TEventMap> {
 
   /**
    * 每帧更新事件
+   * @param delta 帧间隔时间（秒）
    */
-  update() {
+  update(delta: number) {
     if (!this.#isLocked) return;
-    // 是否移动了
-    let moved = false;
-    // 前后移动
-    if (this.#moveForward && !this.#moveBackward) {
-      moved = true;
-      this.#nativeCamera.translateZ(-this.#movementSpeed);
-    } else if (this.#moveBackward && !this.#moveForward) {
-      moved = true;
-      this.#nativeCamera.translateZ(this.#movementSpeed);
-    }
-    // 左右移动
-    if (this.#moveLeft && !this.#moveRight) {
-      moved = true;
-      this.#nativeCamera.translateX(-this.#movementSpeed);
-    } else if (this.#moveRight && !this.#moveLeft) {
-      moved = true;
-      this.#nativeCamera.translateX(this.#movementSpeed);
-    }
-    // 上下移动
-    if (this.#moveUp && !this.#moveDown) {
-      moved = true;
-      this.#nativeCamera.translateY(this.#movementSpeed);
-    } else if (this.#moveDown && !this.#moveUp) {
-      moved = true;
-      this.#nativeCamera.translateY(-this.#movementSpeed);
-    }
-    if (moved)
+
+    // 计算各方向移动分量
+    const x = Number(this.#moveRight) - Number(this.#moveLeft);
+    const y = Number(this.#moveUp) - Number(this.#moveDown);
+    const z = Number(this.#moveBackward) - Number(this.#moveForward);
+
+    if (x !== 0 || y !== 0 || z !== 0) {
+      // 合成移动向量并归一化，统一在相机局部坐标系下平移，防止斜向移动速度过快
+      this.#moveVector.set(x, y, z).normalize();
+      const distance = this.#movementSpeed * delta;
+
+      if (this.#moveVector.x !== 0) {
+        this.#nativeCamera.translateX(this.#moveVector.x * distance);
+      }
+      if (this.#moveVector.y !== 0) {
+        this.#nativeCamera.translateY(this.#moveVector.y * distance);
+      }
+      if (this.#moveVector.z !== 0) {
+        this.#nativeCamera.translateZ(this.#moveVector.z * distance);
+      }
+
       this.dispatchEvent({type: 'changed'});
+    }
   }
 
   /**
@@ -180,13 +181,14 @@ export default class FirstPersonControl extends EventDispatcher<TEventMap> {
     if (!this.#isLocked) return;
     const movementX = ev.movementX;
     const movementY = ev.movementY;
-    // 使用欧拉角旋转
-    const euler = new Euler(0, 0, 0, 'YXZ');
-    euler.setFromQuaternion(this.#nativeCamera.quaternion);
-    euler.y -= movementX * this.#lookSpeed;
-    euler.x -= movementY * this.#lookSpeed;
-    euler.x = MathUtils.clamp(euler.x, -Math.PI / 2, Math.PI / 2);
-    this.#nativeCamera.quaternion.setFromEuler(euler);
+    // 使用复用的欧拉角对象
+    this.#euler.setFromQuaternion(this.#nativeCamera.quaternion);
+    this.#euler.y -= movementX * this.#lookSpeed;
+    this.#euler.x -= movementY * this.#lookSpeed;
+    // 限制俯仰角在 (-PI/2 + 0.0001, PI/2 - 0.0001) 范围，防止死锁或死角翻转
+    const maxPitch = Math.PI / 2 - 0.0001;
+    this.#euler.x = MathUtils.clamp(this.#euler.x, -maxPitch, maxPitch);
+    this.#nativeCamera.quaternion.setFromEuler(this.#euler);
     this.dispatchEvent({type: 'changed'});
   }
 
@@ -201,6 +203,10 @@ export default class FirstPersonControl extends EventDispatcher<TEventMap> {
     } else {
       this.dispatchEvent({type: 'unlock'});
       this.#isLocked = false;
+      // 防止失焦导致 keyup 漏触发从而卡键
+      this.#moveForward = this.#moveBackward = false;
+      this.#moveLeft = this.#moveRight = false;
+      this.#moveUp = this.#moveDown = false;
     }
   }
 

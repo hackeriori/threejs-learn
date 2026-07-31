@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import {onMounted, onUnmounted, ref, type Ref, shallowRef, watch} from 'vue';
 import {BoxGeometry, Mesh, MeshBasicMaterial, Scene} from 'three';
-import FirstPersonControl from '@/core/FirstPersonControl';
-import RendererHelper from '@/core/helpers/RendererHelper';
-import PerspectiveCameraHelper from '@/core/helpers/PerspectiveCameraHelper';
+import FirstPersonControl from '../../core/FirstPersonControl';
+import RendererHelper from '../../core/helpers/RendererHelper';
+import PerspectiveCameraHelper from '../../core/helpers/PerspectiveCameraHelper';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
 let perspectiveCameraHelper: PerspectiveCameraHelper;
-const movementSpeed = ref(0.1);
+const movementSpeed = ref(2);
 const lookSpeed = ref(0.002);
 const started = ref(false);
 let control: FirstPersonControl;
@@ -23,8 +23,12 @@ watch(lookSpeed, value => {
 
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
+  const frameRender = () => {
+    rendererHelper.needUpdate();
+  };
   const renderer = rendererHelper.renderer;
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
+  perspectiveCameraHelper.addEventListener('changed', frameRender);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(0, 0, 4);
 
@@ -41,15 +45,16 @@ onMounted(() => {
   control.addEventListener('unlock', () => {
     started.value = false;
   });
+  control.addEventListener('changed', frameRender);
   control.movementSpeed = movementSpeed.value;
   control.lookSpeed = lookSpeed.value;
 
-  function animate() {
-    control.update();
-    renderer.render(scene, camera);
-  }
-
-  renderer.setAnimationLoop(animate);
+  rendererHelper.startLoop(scene, camera, () => {
+    // loopFun执行之前，已经执行this.timer.update(time)，这里直接getDelta()取结果即可
+    // 如果有任何移动，那么将会触发changed事件，从而执行rendererHelper.needUpdate()
+    const delta = rendererHelper.timer.getDelta();
+    control.update(delta);
+  });
 });
 
 function start() {
@@ -64,22 +69,22 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="height100 ls-abs-outer">
-    <div class="height100" ref="el">
+  <div class="h-full relative">
+    <div class="h-full" ref="el">
     </div>
-  </div>
-  <div class="controlBox">
-    <div>
-      <el-button @click="start">开始</el-button>
-      <span>{{ started ? '已开始' : '已结束' }}</span>第一人称视角
-    </div>
-    <div>
-      移动速度
-      <el-input-number v-model="movementSpeed" :step="0.1"></el-input-number>
-    </div>
-    <div>
-      转头速度
-      <el-input-number v-model="lookSpeed" :step="0.001"></el-input-number>
+    <div class="rounded-lg space-y-2 p-2 absolute left-2 top-2 bg-default">
+      <div class="flex justify-between px-2">
+        <UButton @click="start">开始</UButton>
+        <div><span>{{ started ? '已开始' : '已结束' }}</span>第一人称视角</div>
+      </div>
+      <div>
+        移动速度
+        <UInputNumber v-model="movementSpeed" :step="0.5"></UInputNumber>
+      </div>
+      <div>
+        转头速度
+        <UInputNumber v-model="lookSpeed" :step="0.001"></UInputNumber>
+      </div>
     </div>
   </div>
 </template>
@@ -87,3 +92,4 @@ onUnmounted(() => {
 <style scoped>
 
 </style>
+

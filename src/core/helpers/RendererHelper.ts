@@ -1,7 +1,7 @@
 import type {WebGLRendererParameters} from 'three';
 import {
   type Camera, EventDispatcher, Frustum, type Line, Matrix4, type Mesh, type Object3D, type Points, type Sprite,
-  WebGLRenderer
+  Timer, WebGLRenderer
 } from 'three';
 import {getDomSize} from '../shared';
 import type {SimpleChangedEvent} from './types';
@@ -9,6 +9,8 @@ import type {SimpleChangedEvent} from './types';
 export default class RendererHelper extends EventDispatcher<SimpleChangedEvent> {
   // WebGLRenderer
   public readonly renderer: WebGLRenderer;
+  // Timer 计时器对象
+  public readonly timer: Timer;
   // 父节点dom
   readonly #parentDom: HTMLDivElement;
   // 尺寸变化观察器
@@ -26,6 +28,8 @@ export default class RendererHelper extends EventDispatcher<SimpleChangedEvent> 
     super();
     this.#parentDom = parent;
     this.renderer = new WebGLRenderer(webGLRendererParameters);
+    this.timer = new Timer();
+    this.timer.connect(document);
     this.#updateSize();
     this.#resizeObserver = new ResizeObserver(() => {
       this.#updateSize();
@@ -48,6 +52,7 @@ export default class RendererHelper extends EventDispatcher<SimpleChangedEvent> 
    * 释放资源
    */
   dispose() {
+    this.timer.dispose();
     this.#resizeObserver.disconnect();
     this.renderer.dispose();
     this.#dynamicObjects.clear();
@@ -69,6 +74,7 @@ export default class RendererHelper extends EventDispatcher<SimpleChangedEvent> 
    */
   startLoop(scene: Object3D, camera: Camera, loopFun?: XRFrameRequestCallback, renderFun?: XRFrameRequestCallback) {
     this.renderer.setAnimationLoop((time, frame) => {
+      this.timer.update(time);
       loopFun?.(time, frame);
       if (!this.#needRender && this.#dynamicObjects.size)
         this.#computedMatrixAndIntersects(camera);
