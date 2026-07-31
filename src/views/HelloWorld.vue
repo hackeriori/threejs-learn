@@ -30,6 +30,7 @@ onMounted(() => {
   const geometry = new BoxGeometry(1, 1, 1);
   const material = new MeshStandardMaterial({color: 0xff0000});
   const cube = new Mesh(geometry, material);
+  // onBeforeRender在renderer.render(scene, camera)时执行，并调用 needUpdate() 再次预约下一帧，实现按需渲染
   cube.onBeforeRender = () => {
     if (rotateX.value)
       cube.rotation.x += 0.005;
