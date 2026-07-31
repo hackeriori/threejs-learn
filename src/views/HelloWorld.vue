@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import {onMounted, onUnmounted, ref, type Ref, shallowRef} from 'vue';
+import {onMounted, onUnmounted, ref, type Ref, shallowRef, watch} from 'vue';
 import {BoxGeometry, DirectionalLight, Mesh, MeshStandardMaterial, Scene} from 'three';
 import RendererHelper from '../core/helpers/RendererHelper';
 import PerspectiveCameraHelper from '../core/helpers/PerspectiveCameraHelper';
@@ -11,10 +11,18 @@ const rotateX = ref(true);
 const rotateY = ref(true);
 const rotateZ = ref(false);
 
+watch([rotateX, rotateY, rotateZ], () => {
+  rendererHelper?.needUpdate();
+});
+
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
+  const frameRender = () => {
+    rendererHelper.needUpdate();
+  };
   const renderer = rendererHelper.renderer;
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
+  perspectiveCameraHelper.addEventListener('changed', frameRender);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(0, 0, 4);
 
@@ -22,22 +30,22 @@ onMounted(() => {
   const geometry = new BoxGeometry(1, 1, 1);
   const material = new MeshStandardMaterial({color: 0xff0000});
   const cube = new Mesh(geometry, material);
-  scene.add(cube);
-  const light = new DirectionalLight();
-  light.position.set(-2, 2, 4);
-  scene.add(light);
-
-  function animate() {
+  cube.onBeforeRender = () => {
     if (rotateX.value)
       cube.rotation.x += 0.005;
     if (rotateY.value)
       cube.rotation.y += 0.005;
     if (rotateZ.value)
       cube.rotation.z += 0.005;
-    renderer.render(scene, camera);
-  }
+    if (rotateX.value || rotateY.value || rotateZ.value)
+      rendererHelper.needUpdate();
+  };
+  scene.add(cube);
+  const light = new DirectionalLight();
+  light.position.set(-2, 2, 4);
+  scene.add(light);
 
-  renderer.setAnimationLoop(animate);
+  rendererHelper.startLoop(scene, camera);
 });
 
 onUnmounted(() => {
