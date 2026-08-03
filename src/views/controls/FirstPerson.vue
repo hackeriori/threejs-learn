@@ -26,6 +26,7 @@ onMounted(() => {
   const frameRender = () => {
     rendererHelper.needUpdate();
   };
+  rendererHelper.addEventListener('changed', frameRender);
   const renderer = rendererHelper.renderer;
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
   perspectiveCameraHelper.addEventListener('changed', frameRender);

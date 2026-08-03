@@ -198,15 +198,17 @@ export default class FirstPersonControl extends EventDispatcher<TEventMap> {
    */
   #pointerLockChange() {
     if (this.#canvasElement.ownerDocument.pointerLockElement === this.#canvasElement) {
-      this.dispatchEvent({type: 'lock'});
       this.#isLocked = true;
+      this.dispatchEvent({type: 'lock'});
+      this.dispatchEvent({type: 'changed'});
     } else {
-      this.dispatchEvent({type: 'unlock'});
       this.#isLocked = false;
       // 防止失焦导致 keyup 漏触发从而卡键
       this.#moveForward = this.#moveBackward = false;
       this.#moveLeft = this.#moveRight = false;
       this.#moveUp = this.#moveDown = false;
+      this.dispatchEvent({type: 'unlock'});
+      this.dispatchEvent({type: 'changed'});
     }
   }
 
