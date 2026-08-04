@@ -35,13 +35,13 @@ onMounted(() => {
 
   control = new MapControls(camera, renderer.domElement);
   control.zoomToCursor = true;
+  control.addEventListener('change', () => {
+    rendererHelper.needUpdate();
+  })
 
-  function animate() {
+  rendererHelper.startLoop(scene, camera, () => {
     control.update();
-    renderer.render(scene, camera);
-  }
-
-  renderer.setAnimationLoop(animate);
+  })
 });
 
 onUnmounted(() => {
