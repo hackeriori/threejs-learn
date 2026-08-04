@@ -17,12 +17,8 @@ watch([rotateX, rotateY, rotateZ], () => {
 
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
-  const frameRender = () => {
-    rendererHelper.needUpdate();
-  };
   const renderer = rendererHelper.renderer;
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
-  perspectiveCameraHelper.addEventListener('changed', frameRender);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(0, 0, 4);
 

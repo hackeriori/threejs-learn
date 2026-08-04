@@ -23,13 +23,8 @@ watch(lookSpeed, value => {
 
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
-  const frameRender = () => {
-    rendererHelper.needUpdate();
-  };
-  rendererHelper.addEventListener('changed', frameRender);
   const renderer = rendererHelper.renderer;
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
-  perspectiveCameraHelper.addEventListener('changed', frameRender);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(0, 0, 4);
 
@@ -46,7 +41,9 @@ onMounted(() => {
   control.addEventListener('unlock', () => {
     started.value = false;
   });
-  control.addEventListener('changed', frameRender);
+  control.addEventListener('changed', () => {
+    rendererHelper.needUpdate();
+  });
   control.movementSpeed = movementSpeed.value;
   control.lookSpeed = lookSpeed.value;
 
