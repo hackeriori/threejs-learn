@@ -68,6 +68,30 @@ function multiply() {
   quaternion.setFromAxisAngle(new Vector3(lookUp.value, lookLeft.value, lookRoute.value), MathUtils.degToRad(10));
   // 对四元素做乘法运算相当于在相机当前的朝向基础上再相对旋转。
   camera.quaternion.multiply(quaternion);
+
+  /*// 使用以下代码的四元数旋转，转完一圈头不会偏。
+  // 先应用 q（世界系），再应用原旋转。这样不管相机怎么抬头俯瞰，左右转永远是平平行行地绕着地面旋转。
+  const angle = MathUtils.degToRad(10);
+  // 1. 处理左右看 (Yaw)：绕【世界坐标系】的 Y 轴 (0, 1, 0) 旋转
+  if (lookLeft.value !== 0) {
+    const qYaw = new Quaternion().setFromAxisAngle(
+      new Vector3(0, 1, 0), // 世界 Y 轴
+      lookLeft.value * angle
+    );
+    // 使用 premultiply（前乘），相当于在世界坐标系下施加旋转
+    camera.quaternion.premultiply(qYaw);
+  }
+
+  // 2. 处理上下看 (Pitch)：绕【相机局部坐标系】的 X 轴 (1, 0, 0) 旋转
+  if (lookUp.value !== 0) {
+    const qPitch = new Quaternion().setFromAxisAngle(
+      new Vector3(1, 0, 0), // 局部 X 轴
+      lookUp.value * angle
+    );
+    // 使用 multiply（后乘），相当于在自身局部坐标系下施加旋转
+    camera.quaternion.multiply(qPitch);
+  }
+  */
 }
 
 function setFromEuler() {
@@ -129,6 +153,13 @@ onUnmounted(() => {
         <div>使用"四元数"旋转，转动幅度为10度</div>
         <div class="text-sm text-muted">
           注意左、下、右、上这样转一圈后，头会相当于往左偏，这是因为乘积是相当于在原来的旋转上再旋转，头不正时左右摆头会旋转Z
+        </div>
+        <div class="text-sm text-muted">
+          在三维空间中，旋转是不可交换的（例如：先左转再抬头 ≠ 先抬头再左转），第一次（向左看）：相机绕自己的 Y 轴左转。此时相机的
+          X 轴（右）和 Z 轴（后）在世界坐标系中的方向已经改变了。
+        </div>
+        <div class="text-sm text-muted">
+          如果想用四元数实现“头不偏”的相机，左右看（Yaw）需要绕世界坐标系的 Y 轴 Vector3(0, 1, 0) 旋转。
         </div>
       </div>
       <div class="space-x-4">
