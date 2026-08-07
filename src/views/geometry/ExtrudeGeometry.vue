@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import {onMounted, type Ref, shallowRef, watch, reactive, onUnmounted} from 'vue';
 import {Mesh, MeshBasicMaterial, Scene, Shape, ExtrudeGeometry} from 'three';
-import {MapControls} from 'three/examples/jsm/controls/MapControls';
-import type {ExtrudeGeometryOptions} from 'three/src/geometries/ExtrudeGeometry';
-import RendererHelper from '@/core/helpers/RendererHelper';
-import PerspectiveCameraHelper from '@/core/helpers/PerspectiveCameraHelper';
+import {MapControls} from 'three/examples/jsm/controls/MapControls.js';
+import type {ExtrudeGeometryOptions} from 'three/src/geometries/ExtrudeGeometry.js';
+import RendererHelper from '../../core/helpers/RendererHelper';
+import PerspectiveCameraHelper from '../../core/helpers/PerspectiveCameraHelper';
+import {RenderMonitor} from '../../core/RenderMonitor.ts';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
@@ -33,15 +34,17 @@ let geometry: ExtrudeGeometry;
 let cube: Mesh;
 let shape: Shape;
 
-watch(option, value => {
+watch(option, () => {
   geometry.dispose();
   geometry = new ExtrudeGeometry(shape, option);
   cube.geometry = geometry;
+  rendererHelper.needUpdate();
 });
 
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
   const renderer = rendererHelper.renderer;
+  new RenderMonitor(renderer);
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(15, 0, 15);
@@ -65,13 +68,13 @@ onMounted(() => {
 
   control = new MapControls(camera, renderer.domElement);
   control.zoomToCursor = true;
+  control.addEventListener('change', () => {
+    rendererHelper.needUpdate();
+  })
 
-  function animate() {
+  rendererHelper.startLoop(scene, camera, ()=>{
     control.update();
-    renderer.render(scene, camera);
-  }
-
-  renderer.setAnimationLoop(animate);
+  });
 });
 
 onUnmounted(() => {
@@ -82,42 +85,42 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="height100 ls-abs-outer">
-    <div class="height100" ref="el">
+  <div class="h-full relative">
+    <div class="h-full" ref="el">
     </div>
   </div>
-  <div class="controlBox">
+  <div class="rounded-lg w-xs space-y-2 p-2 absolute left-2 top-2 bg-default">
     <div>
       曲线上点的数量
-      <el-input-number v-model="option.curveSegments"></el-input-number>
+      <UInputNumber v-model="option.curveSegments"></UInputNumber>
     </div>
     <div>
       挤出样条的深度细分的点的数量
-      <el-input-number v-model="option.steps"></el-input-number>
+      <UInputNumber v-model="option.steps"></UInputNumber>
     </div>
     <div>
       挤出形状的深度
-      <el-input-number v-model="option.depth"></el-input-number>
+      <UInputNumber v-model="option.depth"></UInputNumber>
     </div>
     <div>
       对挤出的形状应用是否斜角
-      <el-switch v-model="option.bevelEnabled"></el-switch>
+      <USwitch v-model="option.bevelEnabled"></USwitch>
     </div>
     <div>
       斜角的厚度
-      <el-input-number v-model="option.bevelThickness"></el-input-number>
+      <UInputNumber v-model="option.bevelThickness"></UInputNumber>
     </div>
     <div>
       斜角与原始形状轮廓之间的延伸距离
-      <el-input-number v-model="option.bevelSize"></el-input-number>
+      <UInputNumber v-model="option.bevelSize"></UInputNumber>
     </div>
     <div>
       斜角与原始形状的偏移量
-      <el-input-number v-model="option.bevelOffset"></el-input-number>
+      <UInputNumber v-model="option.bevelOffset"></UInputNumber>
     </div>
     <div>
       斜角的分段层数
-      <el-input-number v-model="option.bevelSegments"></el-input-number>
+      <UInputNumber v-model="option.bevelSegments"></UInputNumber>
     </div>
   </div>
 </template>
