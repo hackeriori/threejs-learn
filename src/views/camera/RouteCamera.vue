@@ -3,6 +3,7 @@ import {onMounted, onUnmounted, ref, type Ref, shallowRef} from 'vue';
 import {BoxGeometry, Mesh, MeshBasicMaterial, Scene, Vector3, MathUtils, Quaternion, type Camera, Euler} from 'three';
 import RendererHelper from '../../core/helpers/RendererHelper';
 import PerspectiveCameraHelper from '../../core/helpers/PerspectiveCameraHelper';
+import {RenderMonitor} from '../../core/RenderMonitor.ts';
 
 type LookType = -1 | 0 | 1;
 
@@ -17,6 +18,7 @@ const lookRoute = ref<LookType>(0);
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
   const renderer = rendererHelper.renderer;
+  new RenderMonitor(renderer);
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
   camera = perspectiveCameraHelper.camera;
 
@@ -47,11 +49,7 @@ onMounted(() => {
     scene.add(cube);
   }
 
-  function animate() {
-    renderer.render(scene, camera);
-  }
-
-  renderer.setAnimationLoop(animate);
+  rendererHelper.startLoop(scene, camera);
 });
 
 function setFromQuaternion() {
@@ -61,6 +59,7 @@ function setFromQuaternion() {
   // 例如setFromAxisAngle(new Vector3(0, 0, 1), MathUtils.degToRad(10))，表示绕Z轴顺时针转10度，相当于向左偏头10度，此时立方体应该往右旋转。
   // 有多个分量的情况下，叠加即可，例如new Vector3(1, 1, 0)，表示向左向上看，此时物体应该在右下角。
   camera.quaternion.setFromAxisAngle(new Vector3(lookUp.value, lookLeft.value, lookRoute.value), MathUtils.degToRad(10));
+  rendererHelper?.needUpdate();
 }
 
 function multiply() {
@@ -68,6 +67,7 @@ function multiply() {
   quaternion.setFromAxisAngle(new Vector3(lookUp.value, lookLeft.value, lookRoute.value), MathUtils.degToRad(10));
   // 对四元素做乘法运算相当于在相机当前的朝向基础上再相对旋转。
   camera.quaternion.multiply(quaternion);
+  rendererHelper?.needUpdate();
 
   /*// 使用以下代码的四元数旋转，转完一圈头不会偏。
   // 先应用 q（世界系），再应用原旋转。这样不管相机怎么抬头俯瞰，左右转永远是平平行行地绕着地面旋转。
@@ -105,10 +105,12 @@ function setFromEuler() {
   if (lookRoute.value)
     euler.z += lookRoute.value * MathUtils.degToRad(10);
   camera.quaternion.setFromEuler(euler);
+  rendererHelper?.needUpdate();
 }
 
 function reset() {
   camera.quaternion.setFromAxisAngle(new Vector3(0, 0, 0), 0);
+  rendererHelper?.needUpdate();
 }
 
 onUnmounted(() => {
