@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import {onMounted, onUnmounted, ref, type Ref, shallowRef, watch} from 'vue';
-import {BufferAttribute, BufferGeometry, type Side, Mesh, MeshBasicMaterial, Scene, FrontSide} from 'three';
-import {MapControls} from 'three/examples/jsm/controls/MapControls';
-import RendererHelper from '@/core/helpers/RendererHelper';
-import PerspectiveCameraHelper from '@/core/helpers/PerspectiveCameraHelper';
+import {
+  BufferAttribute, BufferGeometry, type Side, Mesh, MeshBasicMaterial, Scene, FrontSide, BackSide, DoubleSide
+} from 'three';
+import {MapControls} from 'three/examples/jsm/controls/MapControls.js';
+import RendererHelper from '../../core/helpers/RendererHelper';
+import PerspectiveCameraHelper from '../../core/helpers/PerspectiveCameraHelper';
+import {RenderMonitor} from '../../core/RenderMonitor.ts';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
@@ -12,13 +15,15 @@ let control: MapControls;
 const showSide = ref<Side>(FrontSide);
 let material: MeshBasicMaterial;
 
-watch(showSide, value => {
+watch(showSide, () => {
   material.side = showSide.value;
+  rendererHelper.needUpdate();
 });
 
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
   const renderer = rendererHelper.renderer;
+  new RenderMonitor(renderer);
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(4, 4, 4);
@@ -49,13 +54,13 @@ onMounted(() => {
 
   control = new MapControls(camera, renderer.domElement);
   control.zoomToCursor = true;
+  control.addEventListener('change', () => {
+    rendererHelper.needUpdate();
+  });
 
-  function animate() {
-    control.update();
-    renderer.render(scene, camera);
-  }
-
-  renderer.setAnimationLoop(animate);
+  rendererHelper.startLoop(scene,camera,()=>{
+    control.update()
+  });
 });
 
 onUnmounted(() => {
@@ -66,18 +71,19 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="height100 ls-abs-outer">
-    <div class="height100" ref="el">
+  <div class="h-full relative">
+    <div class="h-full" ref="el">
     </div>
-  </div>
-  <div class="controlBox">
-    <div>
-      红色三角形渲染
-      <el-radio-group v-model="showSide">
-        <el-radio :label="0">正面</el-radio>
-        <el-radio :label="1">背面</el-radio>
-        <el-radio :label="2">双面</el-radio>
-      </el-radio-group>
+    <div class="rounded-lg w-xs space-y-2 p-2 absolute left-2 top-2 bg-default">
+      <div>
+        红色三角形渲染
+      </div>
+      <URadioGroup v-model="showSide" orientation="horizontal" :items="[
+          {label: '正面', value: FrontSide},
+          {label: '背面', value: BackSide},
+          {label: '双面', value: DoubleSide}
+        ]">
+      </URadioGroup>
     </div>
   </div>
 </template>
