@@ -3,6 +3,7 @@ import {onMounted, onUnmounted, ref, type Ref, shallowRef, watch} from 'vue';
 import {BoxGeometry, Mesh, MeshBasicMaterial, Scene} from 'three';
 import RendererHelper from '../core/helpers/RendererHelper';
 import PerspectiveCameraHelper from '../core/helpers/PerspectiveCameraHelper';
+import {RenderMonitor} from '../core/RenderMonitor.ts';
 
 const MIN_POS = -10;
 const MAX_POS = 10;
@@ -49,6 +50,7 @@ onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
   const renderer = rendererHelper.renderer;
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
+  new RenderMonitor(renderer);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(0, 0, 10);
 

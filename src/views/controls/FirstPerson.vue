@@ -4,6 +4,7 @@ import {BoxGeometry, Mesh, MeshBasicMaterial, Scene} from 'three';
 import FirstPersonControl from '../../core/FirstPersonControl';
 import RendererHelper from '../../core/helpers/RendererHelper';
 import PerspectiveCameraHelper from '../../core/helpers/PerspectiveCameraHelper';
+import {RenderMonitor} from '../../core/RenderMonitor.ts';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
@@ -24,6 +25,7 @@ watch(lookSpeed, value => {
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
   const renderer = rendererHelper.renderer;
+  new RenderMonitor(renderer);
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(0, 0, 4);

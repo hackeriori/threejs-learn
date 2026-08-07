@@ -3,6 +3,7 @@ import {onMounted, onUnmounted, ref, type Ref, shallowRef, watch} from 'vue';
 import {BoxGeometry, DirectionalLight, Mesh, MeshStandardMaterial, Scene} from 'three';
 import RendererHelper from '../core/helpers/RendererHelper';
 import PerspectiveCameraHelper from '../core/helpers/PerspectiveCameraHelper';
+import {RenderMonitor} from '../core/RenderMonitor.ts';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
@@ -18,6 +19,7 @@ watch([rotateX, rotateY, rotateZ], () => {
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
   const renderer = rendererHelper.renderer;
+  new RenderMonitor(renderer);
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(0, 0, 4);
