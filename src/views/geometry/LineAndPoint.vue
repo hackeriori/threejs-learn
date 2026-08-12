@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import {onMounted, onUnmounted, type Ref, shallowRef} from 'vue';
 import {
-  BoxGeometry, Line, LineBasicMaterial, LineSegments, Points, PointsMaterial, Scene, SphereGeometry, Vector3,
+  BoxGeometry, BufferAttribute, BufferGeometry, Line, LineBasicMaterial, LineSegments, Points, PointsMaterial, Scene,
+  SphereGeometry,
+  Vector3,
   WireframeGeometry
 } from 'three';
-import {MapControls} from 'three/examples/jsm/controls/MapControls';
-import RendererHelper from '@/core/helpers/RendererHelper';
-import PerspectiveCameraHelper from '@/core/helpers/PerspectiveCameraHelper';
+import {MapControls} from 'three/examples/jsm/controls/MapControls.js';
+import RendererHelper from '../../core/helpers/RendererHelper';
+import PerspectiveCameraHelper from '../../core/helpers/PerspectiveCameraHelper';
+import {RenderMonitor} from '../../core/RenderMonitor.ts';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
@@ -16,6 +19,7 @@ let control: MapControls;
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
   const renderer = rendererHelper.renderer;
+  new RenderMonitor(renderer);
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(2, 2, 10);
@@ -47,16 +51,41 @@ onMounted(() => {
   point2.position.set(2, 2, 0);
   scene.add(point2);
 
-  control = new MapControls(camera, renderer.domElement);
-  control.zoomToCursor = true;
-  control.target = new Vector3(4, 2, 0);
+  // 粒子效果
+  // 1. 创建一个基础的 BufferGeometry
+  const geometry = new BufferGeometry();
 
-  function animate() {
-    control.update();
-    renderer.render(scene, camera);
+  // 2. 创建顶点数据（500个点，每个点有 x, y, z 三个坐标）
+  const count = 500;
+  const positions = new Float32Array(count * 3);
+
+  for (let i = 0; i < count * 3; i++) {
+    positions[i] = (Math.random() - 0.5) * 10; // 随机坐标
   }
 
-  renderer.setAnimationLoop(animate);
+  // 3. 将位置数据设置给 geometry
+  geometry.setAttribute('position', new BufferAttribute(positions, 3));
+
+  // 4. 创建材质
+  const material = new PointsMaterial({
+    color: 0x00ff00,
+    size: 5,
+    sizeAttenuation: false // 此时大小固定为 5 像素
+  });
+
+  // 5. 传入 BufferGeometry 创建 Points 实例
+  const particleSystem = new Points(geometry, material);
+  scene.add(particleSystem);
+
+  control = new MapControls(camera, renderer.domElement);
+  control.zoomToCursor = true;
+  control.screenSpacePanning = true;
+  control.target = new Vector3(4, 2, 0);
+  control.addEventListener('change', () => {
+    rendererHelper.needUpdate();
+  })
+
+  rendererHelper.startLoop(scene, camera);
 });
 
 onUnmounted(() => {
@@ -67,11 +96,9 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="height100 ls-abs-outer">
-    <div class="height100" ref="el">
+  <div class="h-full relative">
+    <div class="h-full" ref="el">
     </div>
-  </div>
-  <div class="controlBox">
   </div>
 </template>
 
