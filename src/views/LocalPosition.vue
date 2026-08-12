@@ -71,7 +71,6 @@ onMounted(() => {
       child.position.y = Math.cos(angleBlue) * radiusBlue;
       child.position.z = Math.sin(angleBlue) * radiusBlue;
     }
-    control.update();
   });
 });
 

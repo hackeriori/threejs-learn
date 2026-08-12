@@ -72,9 +72,7 @@ onMounted(() => {
     rendererHelper.needUpdate();
   })
 
-  rendererHelper.startLoop(scene, camera, ()=>{
-    control.update();
-  });
+  rendererHelper.startLoop(scene, camera);
 });
 
 onUnmounted(() => {

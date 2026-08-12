@@ -8,6 +8,7 @@ import {FontLoader} from 'three/examples/jsm/loaders/FontLoader.js';
 import {simpleFont} from './fontData';
 import RendererHelper from '../../core/helpers/RendererHelper';
 import PerspectiveCameraHelper from '../../core/helpers/PerspectiveCameraHelper';
+import {RenderMonitor} from '../../core/RenderMonitor.ts';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
@@ -34,6 +35,7 @@ watch(fontOptions, value => {
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
   const renderer = rendererHelper.renderer;
+  new RenderMonitor(renderer);
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(2, 4, 6);
@@ -59,13 +61,10 @@ onMounted(() => {
   control = new MapControls(camera, renderer.domElement);
   control.zoomToCursor = true;
 
-  function animate() {
+  rendererHelper.startLoop(scene, camera, ()=>{
     parent.rotation.y += 0.005;
-    control.update();
-    renderer.render(scene, camera);
-  }
-
-  renderer.setAnimationLoop(animate);
+    rendererHelper.needUpdate();
+  })
 });
 
 onUnmounted(() => {
