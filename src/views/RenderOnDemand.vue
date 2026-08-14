@@ -4,6 +4,7 @@ import {BoxGeometry, DirectionalLight, Mesh, MeshStandardMaterial, Scene} from '
 import {MapControls} from 'three/examples/jsm/controls/MapControls.js';
 import RendererHelper from '../core/helpers/RendererHelper';
 import PerspectiveCameraHelper from '../core/helpers/PerspectiveCameraHelper';
+import {RenderMonitor} from '../core/RenderMonitor.ts';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
@@ -12,12 +13,9 @@ let control: MapControls;
 
 onMounted(() => {
   rendererHelper = new RendererHelper(el.value);
-  const frameRender = () => {
-    rendererHelper.needUpdate();
-  };
   const renderer = rendererHelper.renderer;
+  new RenderMonitor(renderer);
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
-  perspectiveCameraHelper.addEventListener('changed', frameRender);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(4, 4, 4);
 
@@ -33,7 +31,9 @@ onMounted(() => {
   control = new MapControls(camera, renderer.domElement);
   control.zoomToCursor = true;
   control.update();
-  control.addEventListener('change', frameRender);
+  control.addEventListener('change', () => {
+    rendererHelper.needUpdate();
+  });
 
   rendererHelper.startLoop(scene, camera);
 });
@@ -51,7 +51,7 @@ onUnmounted(() => {
     </div>
     <div class="space-y-2 w-xs indent-8 rounded-lg p-2 absolute left-2 top-2 bg-default">
       <div>
-        观察浏览器帧渲染统计器或者任务管理器的GPU使用率，可以发现按需渲染在保持禁止不动时，不会渲染帧，几乎不占用GPU。仅当发生交互时，才进行渲染。这对于移动设备（使用电池的场景）来说，更为友好和省电。
+        观察右上角帧率或浏览器帧渲染统计器或者任务管理器的GPU使用率，可以发现按需渲染在保持禁止不动时，不会渲染帧，几乎不占用GPU。仅当发生交互时，才进行渲染。这对于移动设备（使用电池的场景）来说，更为友好和省电。
       </div>
       <div>
         但是这样渲染有个问题，在每帧驱动的动画中，如果把每帧动画写在startLoop的回调中，即使该元素不可见，仍然在逐帧渲染，这样就失去了动态渲染的意义。可以参考
