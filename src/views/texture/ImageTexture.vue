@@ -4,10 +4,11 @@ import {
   BoxGeometry, DirectionalLight, Mesh, MeshStandardMaterial, NearestFilter, PlaneGeometry, Scene, type Texture,
   TextureLoader
 } from 'three';
-import {MapControls} from 'three/examples/jsm/controls/MapControls';
-import RendererHelper from '@/core/helpers/RendererHelper';
-import PerspectiveCameraHelper from '@/core/helpers/PerspectiveCameraHelper';
-import {ClampToEdgeWrapping, MirroredRepeatWrapping, RepeatWrapping, type Wrapping} from 'three/src/constants';
+import {MapControls} from 'three/examples/jsm/controls/MapControls.js';
+import RendererHelper from '../../core/helpers/RendererHelper';
+import PerspectiveCameraHelper from '../../core/helpers/PerspectiveCameraHelper';
+import {ClampToEdgeWrapping, MirroredRepeatWrapping, RepeatWrapping, type Wrapping} from 'three/src/constants.js';
+import {RenderMonitor} from '../../core/RenderMonitor.ts';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
@@ -42,8 +43,8 @@ onMounted(async () => {
     rendererHelper.needUpdate();
   };
   const renderer = rendererHelper.renderer;
+  new RenderMonitor(renderer);
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
-  perspectiveCameraHelper.addEventListener('changed', frameRender);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(4, 4, 4);
 
@@ -89,8 +90,12 @@ onMounted(async () => {
   control.update();
   control.addEventListener('change', frameRender);
 
-  rendererHelper.startLoop(scene, camera, (time) => {
-    const speed = time * 0.001;
+  let speed = 0;
+
+  rendererHelper.startLoop(scene, camera, () => {
+    // 使用 timer.getDelta() 获取增量时间（秒）
+    const delta = rendererHelper.timer.getDelta();
+    speed += delta;
     const radius = 5;
     mesh.position.x = Math.sin(speed) * radius;
   });
@@ -104,36 +109,38 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="height100 ls-abs-outer">
-    <div class="height100" ref="el">
+  <div class="h-full relative">
+    <div class="h-full" ref="el">
     </div>
   </div>
-  <div class="controlBox">
+  <div class="rounded-lg w-xs space-y-2 p-2 absolute left-2 top-2 bg-default">
+    <div>水平方向</div>
     <div>
-      水平方向
-      <el-select v-model="wrapS">
-        <el-option label="重复图案" :value="RepeatWrapping"></el-option>
-        <el-option label="边缘像素" :value="ClampToEdgeWrapping"></el-option>
-        <el-option label="镜像重复" :value="MirroredRepeatWrapping"></el-option>
-      </el-select>
+      <URadioGroup v-model="wrapS" :items="[
+        {label: '重复图案', value: RepeatWrapping},
+        {label: '边缘像素', value: ClampToEdgeWrapping},
+        {label: '镜像重复', value: MirroredRepeatWrapping}
+      ]" orientation="horizontal">
+      </URadioGroup>
     </div>
+    <div>垂直方向</div>
     <div>
-      垂直方向
-      <el-select v-model="wrapT">
-        <el-option label="重复图案" :value="RepeatWrapping"></el-option>
-        <el-option label="边缘像素" :value="ClampToEdgeWrapping"></el-option>
-        <el-option label="镜像重复" :value="MirroredRepeatWrapping"></el-option>
-      </el-select>
+      <URadioGroup v-model="wrapT" :items="[
+        {label: '重复图案', value: RepeatWrapping},
+        {label: '边缘像素', value: ClampToEdgeWrapping},
+        {label: '镜像重复', value: MirroredRepeatWrapping}
+      ]" orientation="horizontal">
+      </URadioGroup>
     </div>
+    <div>水平方向划分</div>
     <div>
-      水平方向划分
-      <el-input-number v-model="repeatX">
-      </el-input-number>
+      <UInputNumber v-model="repeatX">
+      </UInputNumber>
     </div>
+    <div>垂直方向划分</div>
     <div>
-      垂直方向划分
-      <el-input-number v-model="repeatY">
-      </el-input-number>
+      <UInputNumber v-model="repeatY">
+      </UInputNumber>
     </div>
   </div>
 </template>
