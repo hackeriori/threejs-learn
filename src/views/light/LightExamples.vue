@@ -5,11 +5,12 @@ import {
   NearestFilter, type Object3D, PlaneGeometry, PointLight, PointLightHelper, RectAreaLight, Scene, SpotLight,
   SpotLightHelper, type Texture, TextureLoader
 } from 'three';
-import {MapControls} from 'three/examples/jsm/controls/MapControls';
-import RendererHelper from '@/core/helpers/RendererHelper';
-import PerspectiveCameraHelper from '@/core/helpers/PerspectiveCameraHelper';
-import {RepeatWrapping} from 'three/src/constants';
-import {RectAreaLightHelper} from 'three/examples/jsm/helpers/RectAreaLightHelper';
+import {MapControls} from 'three/examples/jsm/controls/MapControls.js';
+import RendererHelper from '../../core/helpers/RendererHelper';
+import PerspectiveCameraHelper from '../../core/helpers/PerspectiveCameraHelper';
+import {RepeatWrapping} from 'three/src/constants.js';
+import {RectAreaLightHelper} from 'three/examples/jsm/helpers/RectAreaLightHelper.js';
+import {RenderMonitor} from '../../core/RenderMonitor.ts';
 
 const el = shallowRef() as Ref<HTMLDivElement>;
 let rendererHelper: RendererHelper;
@@ -78,12 +79,9 @@ watch(currentLight, value => {
 
 onMounted(async () => {
   rendererHelper = new RendererHelper(el.value);
-  const frameRender = () => {
-    rendererHelper.needUpdate();
-  };
   const renderer = rendererHelper.renderer;
+  new RenderMonitor(renderer);
   perspectiveCameraHelper = new PerspectiveCameraHelper(renderer.domElement);
-  perspectiveCameraHelper.addEventListener('changed', frameRender);
   const camera = perspectiveCameraHelper.camera;
   camera.position.set(6, 6, 6);
 
@@ -132,7 +130,9 @@ onMounted(async () => {
   control = new MapControls(camera, renderer.domElement);
   control.zoomToCursor = true;
   control.update();
-  control.addEventListener('change', frameRender);
+  control.addEventListener('change', () => {
+    rendererHelper.needUpdate();
+  });
 
   rendererHelper.startLoop(scene, camera);
 });
@@ -145,43 +145,44 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="height100 ls-abs-outer">
-    <div class="height100" ref="el">
+  <div class="h-full relative">
+    <div class="h-full" ref="el">
     </div>
   </div>
-  <div class="controlBox">
+  <div class="rounded-lg w-sm space-y-2 p-2 absolute left-2 top-2 bg-default">
     <div>
       当前灯光类型
-      <el-radio-group v-model="currentLight">
-        <el-radio :label="1">平行光</el-radio>
-        <el-radio :label="2">点光源</el-radio>
-        <el-radio :label="3">聚光灯</el-radio>
-        <el-radio :label="4">矩形区域光</el-radio>
-      </el-radio-group>
+      <URadioGroup v-model="currentLight" :items="[
+        {value: 1, label: '平行光'},
+        {value: 2, label: '点光源'},
+        {value: 3, label: '聚光灯'},
+        {value: 4, label: '矩形区域光'}
+      ]">
+      </URadioGroup>
     </div>
     <div>
       光照强度
-      <el-input-number v-model="intensity"></el-input-number>
+      <UInputNumber v-model="intensity"></UInputNumber>
     </div>
     <div v-if="currentLight > 1 && currentLight < 4">
       光照距离
-      <el-input-number v-model="distance"></el-input-number>
+      <UInputNumber v-model="distance"></UInputNumber>
     </div>
     <div v-if="currentLight === 3">
       光照范围角度
-      <el-input-number v-model="angle" :max="90" :min="0"></el-input-number>
+      <UInputNumber v-model="angle" :max="90" :min="0"></UInputNumber>
     </div>
     <div>
       x
-      <el-input-number v-model="x"></el-input-number>
+      <UInputNumber v-model="x"></UInputNumber>
     </div>
     <div>
       y
-      <el-input-number v-model="y"></el-input-number>
+      <UInputNumber v-model="y"></UInputNumber>
     </div>
     <div>
       z
-      <el-input-number v-model="z"></el-input-number>
+      <UInputNumber v-model="z"></UInputNumber>
     </div>
     <div v-if="currentLight === 3">可以调节penumbra来控制光源的边缘硬度</div>
     <div v-if="currentLight === 4">
